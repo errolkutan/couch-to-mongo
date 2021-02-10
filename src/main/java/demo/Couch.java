@@ -1,6 +1,9 @@
 // Copyright 2020 Kuei-chun Chen. All rights reserved.
 package demo;
 
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.bson.Document;
 import org.ektorp.*;
 import org.ektorp.http.HttpClient;
@@ -11,8 +14,15 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.EOFException;
 import java.net.MalformedURLException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -49,12 +59,31 @@ public class Couch {
 		shouldInsert = new AtomicLong(0);
 	}
 
-	public void migrate(String lastSequenceNum) throws MalformedURLException, EOFException, InterruptedException {
+	public void migrate(String lastSequenceNum) throws MalformedURLException, EOFException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
 		long startTime = System.currentTimeMillis();
 
 		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(numThreads);
+
+
+//		TrustManager[] trustAllCerts = new TrustManager[] {
+//				new X509TrustManager() {
+//					public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+//						return null;
+//					}
+//					public void checkClientTrusted(X509Certificate[] certs, String authType) {  }
+//
+//					public void checkServerTrusted(X509Certificate[] certs, String authType) {  }
+//				}
+//		};
+//
+//		SSLContext sc = SSLContext.getInstance("SSL");
+//		sc.init(null, trustAllCerts, new SecureRandom());
+//		CloseableHttpClient httpClient = HttpClients.custom().setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE).setSslcontext(sc).build();
+
+
+
 		HttpClient httpClient = new StdHttpClient.Builder().url(couchdbURI).connectionTimeout(timeout)
-				.socketTimeout(timeout).build();
+				.socketTimeout(timeout).relaxedSSLSettings(true).build();
 		CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 		CouchDbConnector couchDB = dbInstance.createConnector(dbName, true);
 

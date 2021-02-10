@@ -387,7 +387,7 @@ public class Mongo implements AutoCloseable {
         Document matchStage = new Document("$match", new Document("operation", new Document("$in", startEndOps)));
         getSessionsPipelineStages.add(matchStage);
 
-        // { operation : "start" } will appear before { operation : "last" }
+        // { operation : "start" } will appear before { operation : "end" }
         Document sortByOpTypeStage = new Document("$sort", new Document("operation", -1));
         getSessionsPipelineStages.add(sortByOpTypeStage);
 
