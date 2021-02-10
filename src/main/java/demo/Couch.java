@@ -64,21 +64,14 @@ public class Couch {
 
 		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(numThreads);
 
-
-		TrustManager[] trustAllCerts = new TrustManager[] {
-				new X509TrustManager() {
-					public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-						return new X509Certificate[0];
-					}
-					public void checkClientTrusted(X509Certificate[] certs, String authType) {  }
-
-					public void checkServerTrusted(X509Certificate[] certs, String authType) {  }
-				}
-		};
-
-		SSLContext sc = SSLContext.getInstance("SSL");
-		sc.init(null, trustAllCerts, new SecureRandom());
+		SSLContext sc = SSLContext.getInstance("TLS");
+		sc.init(null, new TrustManager[] { new TrustAllX509TrustManager() }, new java.security.SecureRandom());
 		HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+		HttpsURLConnection.setDefaultHostnameVerifier( new HostnameVerifier(){
+			public boolean verify(String string,SSLSession ssls) {
+				return true;
+			}
+		});
 
 //		trustAllHosts();
 
@@ -380,6 +373,21 @@ public class Couch {
 		// Record time
 		long endTime = System.currentTimeMillis();
 		logger.debug(String.format("processViewResults() on id %d lasted %d mills", id, endTime - startTime));
+
+	}
+
+	private class TrustAllX509TrustManager implements X509TrustManager {
+		public X509Certificate[] getAcceptedIssuers() {
+			return new X509Certificate[0];
+		}
+
+		public void checkClientTrusted(java.security.cert.X509Certificate[] certs,
+									   String authType) {
+		}
+
+		public void checkServerTrusted(java.security.cert.X509Certificate[] certs,
+									   String authType) {
+		}
 
 	}
 }
