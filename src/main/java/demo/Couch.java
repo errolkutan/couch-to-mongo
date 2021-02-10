@@ -68,7 +68,7 @@ public class Couch {
 		TrustManager[] trustAllCerts = new TrustManager[] {
 				new X509TrustManager() {
 					public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-						return null;
+						return new X509Certificate[0];
 					}
 					public void checkClientTrusted(X509Certificate[] certs, String authType) {  }
 
@@ -78,7 +78,6 @@ public class Couch {
 
 		SSLContext sc = SSLContext.getInstance("SSL");
 		sc.init(null, trustAllCerts, new SecureRandom());
-		sc.init(null, trustAllCerts, new java.security.SecureRandom());
 		HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
 
 //		trustAllHosts();
