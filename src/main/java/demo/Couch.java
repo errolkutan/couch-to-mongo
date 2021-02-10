@@ -78,7 +78,10 @@ public class Couch {
 
 		SSLContext sc = SSLContext.getInstance("SSL");
 		sc.init(null, trustAllCerts, new SecureRandom());
-		trustAllHosts();
+		sc.init(null, trustAllCerts, new java.security.SecureRandom());
+		HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+
+//		trustAllHosts();
 
 		HttpClient httpClient = new StdHttpClient.Builder().url(couchdbURI).connectionTimeout(timeout)
 				.socketTimeout(timeout).enableSSL(false).build();
