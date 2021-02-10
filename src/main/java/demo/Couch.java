@@ -14,14 +14,14 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 import java.io.EOFException;
 import java.net.MalformedURLException;
+import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -65,25 +65,23 @@ public class Couch {
 		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(numThreads);
 
 
-//		TrustManager[] trustAllCerts = new TrustManager[] {
-//				new X509TrustManager() {
-//					public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-//						return null;
-//					}
-//					public void checkClientTrusted(X509Certificate[] certs, String authType) {  }
-//
-//					public void checkServerTrusted(X509Certificate[] certs, String authType) {  }
-//				}
-//		};
-//
-//		SSLContext sc = SSLContext.getInstance("SSL");
-//		sc.init(null, trustAllCerts, new SecureRandom());
-//		CloseableHttpClient httpClient = HttpClients.custom().setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE).setSslcontext(sc).build();
+		TrustManager[] trustAllCerts = new TrustManager[] {
+				new X509TrustManager() {
+					public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+						return null;
+					}
+					public void checkClientTrusted(X509Certificate[] certs, String authType) {  }
 
+					public void checkServerTrusted(X509Certificate[] certs, String authType) {  }
+				}
+		};
 
+		SSLContext sc = SSLContext.getInstance("SSL");
+		sc.init(null, trustAllCerts, new SecureRandom());
+		trustAllHosts();
 
 		HttpClient httpClient = new StdHttpClient.Builder().url(couchdbURI).connectionTimeout(timeout)
-				.socketTimeout(timeout).relaxedSSLSettings(true).build();
+				.socketTimeout(timeout).enableSSL(false).build();
 		CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 		CouchDbConnector couchDB = dbInstance.createConnector(dbName, true);
 
@@ -112,6 +110,70 @@ public class Couch {
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
+		}
+	}
+
+	public void trustAllHosts()
+	{
+		try
+		{
+			TrustManager[] trustAllCerts = new TrustManager[]{
+					new X509ExtendedTrustManager()
+					{
+						@Override
+						public java.security.cert.X509Certificate[] getAcceptedIssuers()
+						{
+							return null;
+						}
+
+						@Override
+						public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType)
+						{
+						}
+
+						@Override
+						public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) {
+						}
+
+						@Override
+						public void checkClientTrusted(java.security.cert.X509Certificate[] xcs, String string, Socket socket) throws CertificateException {
+
+						}
+
+						@Override
+						public void checkServerTrusted(java.security.cert.X509Certificate[] xcs, String string, Socket socket) throws CertificateException {
+
+						}
+
+						@Override
+						public void checkClientTrusted(java.security.cert.X509Certificate[] xcs, String string, SSLEngine ssle) throws CertificateException {
+
+						}
+
+						@Override
+						public void checkServerTrusted(java.security.cert.X509Certificate[] xcs, String string, SSLEngine ssle) throws CertificateException {
+
+						}
+					}
+			};
+
+			SSLContext sc = SSLContext.getInstance("SSL");
+			sc.init(null, trustAllCerts, new java.security.SecureRandom());
+			HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+
+			// Create all-trusting host name verifier
+			HostnameVerifier allHostsValid = new  HostnameVerifier()
+			{
+				@Override
+				public boolean verify(String hostname, SSLSession session)
+				{
+					return true;
+				}
+			};
+			// Install the all-trusting host verifier
+			HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+		} catch (Exception e) {
+			logger.error("Error occurred",e);
 		}
 	}
 
